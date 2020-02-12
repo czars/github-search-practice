@@ -1,12 +1,14 @@
 //
 //  SceneDelegate.swift
-//  github search practice
+//  CameraApp
 //
-//  Created by Paul.Chou on 2020/2/10.
-//  Copyright © 2020 Paul.Chou. All rights reserved.
+//  Created by Han Capital on 12/14/19.
+//  Copyright © 2019 sapa.tech. All rights reserved.
 //
 
 import UIKit
+import Kingfisher
+import KingfisherWebP
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
@@ -17,7 +19,18 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
         // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
         // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
-        guard let _ = (scene as? UIWindowScene) else { return }
+        guard let windowScene = (scene as? UIWindowScene) else { return }
+        
+        window = UIWindow(frame: windowScene.coordinateSpace.bounds)
+        window?.windowScene = windowScene
+        let searchUserViewModel = SearchUserViewModel()
+        searchUserViewModel.apiEngine = APIEngine()
+        let rootVC = SearchUserViewController.init(with: searchUserViewModel)
+        let navi = UINavigationController.init(rootViewController: rootVC)
+        window?.rootViewController = navi
+        window?.makeKeyAndVisible()
+        
+        setupThirdParty()
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
@@ -47,7 +60,23 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         // Use this method to save data, release shared resources, and store enough scene-specific state information
         // to restore the scene back to its current state.
     }
+}
 
-
+fileprivate extension SceneDelegate {
+    func setupThirdParty() {
+        DispatchQueue.global(qos: .background).async {
+            KingfisherManager.shared.defaultOptions += [
+                .processor(WebPProcessor.default),
+                .cacheSerializer(WebPSerializer.default),
+                .transition(.fade(0.25)),
+                .backgroundDecode
+            ]
+            
+            let cached = ImageCache.default
+            cached.memoryStorage.config.totalCostLimit = 100 * 1024 * 1024 // up to 100 MB
+            cached.diskStorage.config.sizeLimit = 300 * 1024 * 1024 // up to 300 MB
+            cached.diskStorage.config.expiration = .days(2)
+        }
+    }
 }
 
